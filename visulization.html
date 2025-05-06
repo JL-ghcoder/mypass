@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密解密工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+    <header>
+        <h1 style="text-align: center;">加密解密工具</h1>
+        <pre style="text-align: center; font-family: monospace; font-size: 12px;">
+ __  __  _  _  ____   __    ___  ___      ____  _____  _____  __   
+(  \/  )( \/ )(  _ \ /__\  / __)/ __) ___(_  _)(  _  )(  _  )(  )  
+ )    (  \  /  )___//(__)\ \__ \\__ \(___) )(   )(_)(  )(_)(  )(__ 
+(_/\/\_) (__) (__) (__)(__)(___/(___/     (__) (_____)(_____)(____)
+        </pre>
+    </header>
+
+    <div style="border: 1px solid #ccc; padding: 20px; border-radius: 5px; margin-top: 20px;">
+        <h2 style="margin-top: 0;">操作选择</h2>
+        <div style="margin: 20px 0;">
+            <input type="radio" id="encrypt" name="operation" value="encrypt" checked>
+            <label for="encrypt">加密数据</label>
+            
+            <input type="radio" id="decrypt" name="operation" value="decrypt" style="margin-left: 20px;">
+            <label for="decrypt">解密数据</label>
+        </div>
+
+        <!-- 输入区域 -->
+        <div id="input-section">
+            <div id="encrypt-section">
+                <h3>加密数据</h3>
+                <div>
+                    <label for="data-to-encrypt">请输入要加密的数据:</label><br>
+                    <textarea id="data-to-encrypt" rows="5" style="width: 100%; margin: 10px 0;"></textarea>
+                </div>
+                <div>
+                    <label for="encrypt-key">请输入加密密钥:</label><br>
+                    <input type="password" id="encrypt-key" style="width: 100%; margin: 10px 0;">
+                </div>
+                <button id="encrypt-btn" style="padding: 10px 20px; margin: 10px 0;">加密</button>
+            </div>
+
+            <div id="decrypt-section" style="display: none;">
+                <h3>解密数据</h3>
+                <div>
+                    <label for="encrypted-data">请输入加密数据 (Base64):</label><br>
+                    <textarea id="encrypted-data" rows="5" style="width: 100%; margin: 10px 0;"></textarea>
+                </div>
+                <div>
+                    <label for="iv">请输入初始化向量 (IV) (Base64):</label><br>
+                    <input type="text" id="iv" style="width: 100%; margin: 10px 0;">
+                </div>
+                <div>
+                    <label for="decrypt-key">请输入解密密钥:</label><br>
+                    <input type="password" id="decrypt-key" style="width: 100%; margin: 10px 0;">
+                </div>
+                <button id="decrypt-btn" style="padding: 10px 20px; margin: 10px 0;">解密</button>
+            </div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div id="result-section" style="margin-top: 20px; display: none;">
+            <h3>结果</h3>
+            <div id="result-container" style="border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;">
+                <div id="encrypt-result" style="display: none;">
+                    <div>
+                        <strong>加密数据 (Base64):</strong>
+                        <pre id="encrypted-result" style="word-break: break-all; white-space: pre-wrap;"></pre>
+                    </div>
+                    <div>
+                        <strong>初始化向量 (IV) (Base64):</strong>
+                        <pre id="iv-result" style="word-break: break-all; white-space: pre-wrap;"></pre>
+                    </div>
+                    <div>
+                        <strong>JSON格式:</strong>
+                        <pre id="json-result" style="word-break: break-all; white-space: pre-wrap;"></pre>
+                    </div>
+                    <button id="save-btn" style="padding: 5px 10px; margin-top: 10px;">保存到文件</button>
+                </div>
+                <div id="decrypt-result" style="display: none;">
+                    <div>
+                        <strong>解密后的数据:</strong>
+                        <pre id="decrypted-result" style="word-break: break-all; white-space: pre-wrap;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换加密/解密操作
+        document.querySelectorAll('input[name="operation"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'encrypt') {
+                    document.getElementById('encrypt-section').style.display = 'block';
+                    document.getElementById('decrypt-section').style.display = 'none';
+                } else {
+                    document.getElementById('encrypt-section').style.display = 'none';
+                    document.getElementById('decrypt-section').style.display = 'block';
+                }
+                // 隐藏结果区
+                document.getElementById('result-section').style.display = 'none';
+            });
+        });
+
+        // 加密函数
+        function encrypt(data, key) {
+            try {
+                // 创建一个32位的密钥 (使用SHA-256哈希密钥)
+                const keyHash = CryptoJS.SHA256(key);
+                
+                // 生成随机初始化向量
+                const iv = CryptoJS.lib.WordArray.random(16);
+                
+                // 填充数据 (CryptoJS自动处理PKCS#7填充)
+                const encrypted = CryptoJS.AES.encrypt(data, keyHash, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                
+                return {
+                    encrypted_data: encrypted.toString(),
+                    iv: CryptoJS.enc.Base64.stringify(iv)
+                };
+            } catch (e) {
+                console.error("加密错误:", e);
+                alert("加密失败: " + e.message);
+                return null;
+            }
+        }
+
+        // 解密函数
+        function decrypt(encryptedDataB64, key, ivB64) {
+            try {
+                // 创建一个32位的密钥 (使用SHA-256哈希密钥)
+                const keyHash = CryptoJS.SHA256(key);
+                
+                // 将IV从Base64解码
+                const iv = CryptoJS.enc.Base64.parse(ivB64);
+                
+                // 解密数据
+                const decrypted = CryptoJS.AES.decrypt(encryptedDataB64, keyHash, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                
+                return decrypted.toString(CryptoJS.enc.Utf8);
+            } catch (e) {
+                console.error("解密错误:", e);
+                alert("解密失败: " + e.message);
+                return null;
+            }
+        }
+
+        // 保存文件函数
+        function saveToFile(data, filename = 'encrypted_key.json') {
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+        }
+
+        // 加密按钮事件
+        document.getElementById('encrypt-btn').addEventListener('click', function() {
+            const data = document.getElementById('data-to-encrypt').value;
+            const key = document.getElementById('encrypt-key').value;
+            
+            if (!data) {
+                alert("数据不能为空!");
+                return;
+            }
+            
+            if (!key) {
+                alert("密钥不能为空!");
+                return;
+            }
+            
+            const result = encrypt(data, key);
+            if (result) {
+                // 显示结果
+                document.getElementById('encrypted-result').textContent = result.encrypted_data;
+                document.getElementById('iv-result').textContent = result.iv;
+                document.getElementById('json-result').textContent = JSON.stringify(result, null, 4);
+                
+                document.getElementById('result-section').style.display = 'block';
+                document.getElementById('encrypt-result').style.display = 'block';
+                document.getElementById('decrypt-result').style.display = 'none';
+            }
+        });
+
+        // 解密按钮事件
+        document.getElementById('decrypt-btn').addEventListener('click', function() {
+            const encryptedData = document.getElementById('encrypted-data').value;
+            const iv = document.getElementById('iv').value;
+            const key = document.getElementById('decrypt-key').value;
+            
+            if (!encryptedData) {
+                alert("加密数据不能为空!");
+                return;
+            }
+            
+            if (!iv) {
+                alert("初始化向量不能为空!");
+                return;
+            }
+            
+            if (!key) {
+                alert("密钥不能为空!");
+                return;
+            }
+            
+            const result = decrypt(encryptedData, key, iv);
+            if (result) {
+                // 显示结果
+                document.getElementById('decrypted-result').textContent = result;
+                
+                document.getElementById('result-section').style.display = 'block';
+                document.getElementById('encrypt-result').style.display = 'none';
+                document.getElementById('decrypt-result').style.display = 'block';
+            }
+        });
+
+        // 保存按钮事件
+        document.getElementById('save-btn').addEventListener('click', function() {
+            const jsonData = document.getElementById('json-result').textContent;
+            saveToFile(jsonData);
+        });
+    </script>
+</body>
+</html>

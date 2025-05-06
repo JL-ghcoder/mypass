@@ -7,14 +7,14 @@ password1 = get_password(
 
 password2 = get_password(
     server_url="http://localhost:6666/decrypt",
-    encrypted_data="6BxemLxyiBXFwfMEetiXiQ==", 
-    iv="6WhgnvA+zrAEiySRSpSH6w=="
+    encrypted_data="xxx", 
+    iv="xxx"
 )
 
 password3 = get_password(
-    encrypted_data="6BxemLxyiBXFwfMEetiXiQ==", 
-    iv="6WhgnvA+zrAEiySRSpSH6w==",
-    local_key="helloworld"
+    encrypted_data="xxx", 
+    iv="xxx",
+    local_key="xxx"
 )
 
 print("password1: ", password1)
